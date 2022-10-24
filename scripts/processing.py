@@ -1,6 +1,8 @@
 from scripts.preprocessing import *
 import os
 import plotly.graph_objects as go
+import plotly
+# import pandas as pd
 
 
 # use preprocessing.py to import data
@@ -20,6 +22,7 @@ def import_folder(mac_address_list, folder):
             if file.startswith(mac_address + "_d") & file.endswith(".bin"):
                 data.append(bin_to_dataframe(folder + "/" + file))
         if len(data) > 0:
+            # output_dict[mac_address] = pd.concat(data)
             output_dict[mac_address] = data
         else:
             print("No data found for " + mac_address)
@@ -28,11 +31,13 @@ def import_folder(mac_address_list, folder):
 
 
 # put all dataframes of a list into a list of traces for plotly
-def trace_dataframe_list(dataframe_list, sensor_names):
+def trace_dataframe_list(dataframe_list, sensor_names, showlegend=True):
+    colors = plotly.colors.DEFAULT_PLOTLY_COLORS
     output = []
     for dataframe in dataframe_list:
         y_axis = dataframe[sensor_names]
         x_axis = dataframe.index
-        for s in sensor_names:
-            output.append(go.Scatter(x=x_axis, y=y_axis[s], name=s))
+        for index, s in enumerate(sensor_names):
+            output.append(go.Scattergl(x=x_axis, y=y_axis[s], name=s, legendgroup=s, showlegend=showlegend,
+                                       line=dict(color=colors[index])))
     return output
