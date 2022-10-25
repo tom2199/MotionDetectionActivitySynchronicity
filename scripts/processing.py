@@ -2,7 +2,7 @@ from scripts.preprocessing import *
 import os
 import plotly.graph_objects as go
 import plotly
-# import pandas as pd
+import pandas as pd
 
 
 # use preprocessing.py to import data
@@ -40,4 +40,14 @@ def trace_dataframe_list(dataframe_list, sensor_names, showlegend=True):
         for index, s in enumerate(sensor_names):
             output.append(go.Scattergl(x=x_axis, y=y_axis[s], name=s, legendgroup=s, showlegend=showlegend,
                                        line=dict(color=colors[index])))
+    return output
+
+
+# return a list of dataframes within the specified time range
+def return_dataframe_list_within_timerange(dataframe_list, from_time, to_time):
+    output = []
+    for dataframe in dataframe_list:
+        if ((dataframe.index[len(dataframe.index) - 1] > pd.Timestamp(from_time)) & (
+                dataframe.index[0] < pd.Timestamp(to_time))):
+            output.append(dataframe)
     return output
