@@ -9,8 +9,16 @@ import pandas as pd
 def bin_to_dataframe(file):
     data = readBinFile(file)
     dataframe = decompress(data)
-    dataframe_equidistant = make_equidistant([dataframe], 25)[0][0]
-    return resample_raw_data(dataframe_equidistant, 25)
+    return dataframe
+
+
+# use preprocessing.py to make dataframes equidistant
+def make_dataframes_equidistant(dataframe_list, sampling_rate):
+    output = []
+    dataframe_equidistant_list = make_equidistant(dataframe_list, sampling_rate)[0]
+    for dataframe in dataframe_equidistant_list:
+        output.append(resample_raw_data(dataframe, sampling_rate))
+    return output
 
 
 # import data from specified directory and list of mac addresses and output a dictionary of dataframes
@@ -22,6 +30,7 @@ def import_folder(mac_address_list, folder):
             if file.startswith(mac_address + "_d") & file.endswith(".bin"):
                 data.append(bin_to_dataframe(folder + "/" + file))
         if len(data) > 0:
+            data = make_dataframes_equidistant(data, 25)
             # output_dict[mac_address] = pd.concat(data)
             output_dict[mac_address] = data
         else:
