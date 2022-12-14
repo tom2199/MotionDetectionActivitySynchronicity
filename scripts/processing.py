@@ -30,6 +30,7 @@ def import_folder(mac_address_list, folder):
             if file.startswith(mac_address + "_d") & file.endswith(".bin"):
                 data.append(bin_to_dataframe(folder + "/" + file))
         if len(data) > 0:
+            data.sort(key=lambda d: d.index[0])
             data = make_dataframes_equidistant(data, 25)
             # output_dict[mac_address] = pd.concat(data)
             output_dict[mac_address] = data
