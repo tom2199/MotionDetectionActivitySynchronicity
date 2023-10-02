@@ -76,10 +76,12 @@ def calc_lag(a, b):
 
 
 # calculate the selected attributes in the selected timeframe
-def calc_rolling_attributes(dataframe, attributes=None, timeframe="10s"):
+def calc_rolling_attributes(dataframe, attributes=None, timeframe="10s", iqr=None):
+    if iqr is None:
+        iqr = [0.25, 0.75]
     if attributes is None:
         attributes = ["min", "max", "mean", "std", "quant0.1", "quant0.3", "quant0.5", "quant0.7",
-                      "quant0.9", "fft_freq", "diff"]
+                      "quant0.9", "fft_freq", "diff", "iqr"]
     output = pd.DataFrame()
 
     if "min" in attributes:
@@ -113,6 +115,10 @@ def calc_rolling_attributes(dataframe, attributes=None, timeframe="10s"):
 
     if "min" and "max" and "diff" in attributes:
         output["diff"] = output["max"] - output["min"]
+
+    if "iqr" in attributes:
+        output["iqr"] = calc_iqr(dataframe, iqr[0], iqr[1], timeframe=timeframe)
+
     return output
 
 
@@ -134,3 +140,18 @@ def calc_fft_freq(dataframe, cutoff=0.1, hz=25):
     fftfreq = fftpack.fftfreq(len(psd), 1. / hz)
     i = fftfreq > cutoff
     return float(fftfreq[np.where(psd[i] == psd[i].max())][0])
+
+
+# remove outliers in the dataset using the Z-Score
+def remove_outliers_by_zscore(dataframe_column, threshold=3, timeframe="10s"):
+    z = np.abs(stats.zscore(dataframe_column))
+    output = pd.DataFrame()
+    output = dataframe_column[z < threshold]
+    return output.resample(timeframe).interpolate()
+
+
+# calculate IQR within timeframe
+def calc_iqr(dataframe, lower_quant=0.25, upper_quant=0.75, timeframe="10s"):
+    low = dataframe.rolling(timeframe).quantile(lower_quant).resample(timeframe).first()
+    high = dataframe.rolling(timeframe).quantile(upper_quant).resample(timeframe).first()
+    return (high - low).abs()
