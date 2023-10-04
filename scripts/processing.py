@@ -81,7 +81,22 @@ def calc_rolling_attributes(dataframe, attributes=None, timeframe="10s", iqr=Non
         iqr = [0.25, 0.75]
     if attributes is None:
         attributes = ["min", "max", "mean", "std", "quant0.1", "quant0.3", "quant0.5", "quant0.7",
-                      "quant0.9", "fft_freq", "diff", "iqr"]
+                      "quant0.9", "fft_freq", "diff", "iqr0.1", "iqr0.2", "iqr0.4", "iqr0.6", "iqr0.8", "iqr0.9"]
+    if "quant_all" in attributes:
+        attributes.remove("quant_all")
+        attributes.append("quant0.1")
+        attributes.append("quant0.3")
+        attributes.append("quant0.5")
+        attributes.append("quant0.7")
+        attributes.append("quant0.9")
+    if "iqr_all" in attributes:
+        attributes.remove("iqr_all")
+        attributes.append("iqr0.1")
+        attributes.append("iqr0.2")
+        attributes.append("iqr0.4")
+        attributes.append("iqr0.6")
+        attributes.append("iqr0.8")
+        attributes.append("iqr0.9")
     output = pd.DataFrame()
 
     if "min" in attributes:
@@ -118,6 +133,19 @@ def calc_rolling_attributes(dataframe, attributes=None, timeframe="10s", iqr=Non
 
     if "iqr" in attributes:
         output["iqr"] = calc_iqr(dataframe, iqr[0], iqr[1], timeframe=timeframe)
+
+    if "iqr0.1" in attributes:
+        output["iqr0.1"] = calc_iqr(dataframe, 0.45, 0.55, timeframe=timeframe)
+    if "iqr0.2" in attributes:
+        output["iqr0.2"] = calc_iqr(dataframe, 0.4, 0.6, timeframe=timeframe)
+    if "iqr0.4" in attributes:
+        output["iqr0.4"] = calc_iqr(dataframe, 0.3, 0.7, timeframe=timeframe)
+    if "iqr0.6" in attributes:
+        output["iqr0.6"] = calc_iqr(dataframe, 0.2, 0.8, timeframe=timeframe)
+    if "iqr0.8" in attributes:
+        output["iqr0.8"] = calc_iqr(dataframe, 0.1, 0.9, timeframe=timeframe)
+    if "iqr0.9" in attributes:
+        output["iqr0.9"] = calc_iqr(dataframe, 0.05, 0.95, timeframe=timeframe)
 
     return output
 
