@@ -183,3 +183,36 @@ def calc_iqr(dataframe, lower_quant=0.25, upper_quant=0.75, timeframe="10s"):
     low = dataframe.rolling(timeframe).quantile(lower_quant).resample(timeframe).first()
     high = dataframe.rolling(timeframe).quantile(upper_quant).resample(timeframe).first()
     return (high - low).abs()
+
+
+# calculate activity based on the difference between min and max
+def calc_activity(df_diff_columm, treshold=4):
+    activity = pd.DataFrame()
+    activity = df_diff_columm > 1
+    activity = activity.rolling(6).sum()
+    activity.loc[activity < treshold] = 0
+    activity.loc[activity >= treshold] = 1
+    return activity
+
+
+# calculate score based on quantile start and stop treshold
+def calc_score(df_iqr_column, start_treshold=0.95, stop_treshold=0.75):
+    output = pd.DataFrame(index=df_iqr_column.index)
+    activity_started = False
+    score = []
+    for row in df_iqr_column:
+        iqr = row
+        if iqr > start_treshold:
+            if not activity_started:
+                activity_started = True
+        elif iqr < stop_treshold:
+            if activity_started:
+                activity_started = False
+
+        if activity_started:
+            score.append(1)
+        else:
+            score.append(0)
+    output = score
+    output = output.resample("60s").mean().resample("10s").interpolate()
+    return output
