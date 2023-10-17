@@ -223,8 +223,8 @@ def calc_score(df_iqr_column, start_threshold=0.95, stop_threshold=0.75, resampl
 def calc_identifier(df_column, gap=30, min_val=0):
     output = pd.DataFrame()
     output = df_column[df_column > min_val]
-    output[""] = (~output.index.to_series().diff().dt.seconds.div(gap, fill_value=0).lt(2)).cumsum()
-    return output[""]
+    output["identifier"] = (~output.index.to_series().diff().dt.seconds.div(gap, fill_value=0).lt(2)).cumsum()
+    return output["identifier"]
 
 
 # calculate window for a single identifier number
