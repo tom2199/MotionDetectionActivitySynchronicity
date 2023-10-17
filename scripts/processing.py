@@ -41,14 +41,14 @@ def import_folder(mac_address_list, folder):
 
 
 # put all dataframes of a list into a list of traces for plotly
-def trace_dataframe_list(dataframe_list, sensor_names, showlegend=True):
+def trace_dataframe_list(dataframe_list, sensor_names, show_legend=True):
     colors = plotly.colors.DEFAULT_PLOTLY_COLORS
     output = []
     for dataframe in dataframe_list:
         y_axis = dataframe[sensor_names]
         x_axis = dataframe.index
         for index, s in enumerate(sensor_names):
-            output.append(go.Scattergl(x=x_axis, y=y_axis[s], name=s, legendgroup=s, showlegend=showlegend,
+            output.append(go.Scattergl(x=x_axis, y=y_axis[s], name=s, legendgroup=s, showlegend=show_legend,
                                        line=dict(color=colors[index])))
     return output
 
@@ -186,26 +186,26 @@ def calc_iqr(dataframe, lower_quant=0.25, upper_quant=0.75, timeframe="10s"):
 
 
 # calculate activity based on the difference between min and max
-def calc_activity(df_diff_columm, diff_treshold=1, rolling_treshold=4):
+def calc_activity(df_diff_column, diff_threshold=1, rolling_threshold=4):
     activity = pd.DataFrame()
-    activity = df_diff_columm > diff_treshold
+    activity = df_diff_column > diff_threshold
     activity = activity.rolling(6).sum()
-    activity.loc[activity < rolling_treshold] = 0
-    activity.loc[activity >= rolling_treshold] = 1
+    activity.loc[activity < rolling_threshold] = 0
+    activity.loc[activity >= rolling_threshold] = 1
     return activity
 
 
-# calculate score based on quantile start and stop treshold
-def calc_score(df_iqr_column, start_treshold=0.95, stop_treshold=0.75, resample=None, timeframe=None):
+# calculate score based on quantile start and stop threshold
+def calc_score(df_iqr_column, start_threshold=0.95, stop_threshold=0.75, resample=None, timeframe=None):
     output = pd.DataFrame(index=df_iqr_column.index)
     activity_started = False
     score = []
     for row in df_iqr_column:
         iqr = row
-        if iqr > start_treshold:
+        if iqr > start_threshold:
             if not activity_started:
                 activity_started = True
-        elif iqr < stop_treshold:
+        elif iqr < stop_threshold:
             if activity_started:
                 activity_started = False
 
@@ -216,4 +216,67 @@ def calc_score(df_iqr_column, start_treshold=0.95, stop_treshold=0.75, resample=
     output[""] = score
     if resample is not None and timeframe is not None:
         output = output.resample(resample).mean().resample(timeframe).interpolate()
+    return output
+
+
+# calculate groups of data where the value is above the threshold and give them an identifier each
+def calc_identifier(df_column, gap=30, min_val=0):
+    output = pd.DataFrame()
+    output = df_column[df_column > min_val]
+    output[""] = (~output.index.to_series().diff().dt.seconds.div(gap, fill_value=0).lt(2)).cumsum()
+    return output[""]
+
+
+# calculate window for a single identifier number
+def __calc_window_for_number(df_column, number=0):
+    temp = pd.DataFrame()
+    temp[""] = df_column
+    temp[""] = temp[temp[""] == number]
+    temp = temp.dropna()
+    return temp.index[0], temp.index[-1]
+
+
+# calculate windows for all identifier numbers
+def calc_windows(df_column):
+    output = []
+    for n in range(df_column.min().astype(int), df_column.max().astype(int) + 1):
+        output.append(__calc_window_for_number(df_column, n))
+    return output
+
+
+# calculate the overlap between two windows
+def __compare_two_windows(window1_start, window1_end, window2_start, window2_end, index1, index2, cutoff=0.8):
+    window1 = pd.DataFrame(index=index1)
+    window2 = pd.DataFrame(index=index2)
+    output = pd.DataFrame(index=index1 & index2)
+    window1[""] = 0
+    window2[""] = 0
+    window1[window1_start:window1_end] = 0.5
+    window2[window2_start:window2_end] = 0.5
+    count1 = (window1 == 0.5).values.sum()
+    count2 = (window2 == 0.5).values.sum()
+    count = max(count1, count2)
+
+    output = window1 + window2
+    count_output = (output == 1).values.sum()
+
+    if count_output / count < cutoff:
+        output[""] = 0
+    return output[""]
+
+
+# calculate the overlap between two dataframes (result is a mask for the data where the overlap is above the cutoff)
+def calc_windows_between_two_dataframes(df1_column, df2_column, cutoff=0.8):
+    df1_windows = calc_windows(df1_column)
+    df2_windows = calc_windows(df2_column)
+
+    output = pd.DataFrame(index=df1_column.index & df2_column.index)
+    df_out_list = []
+    for i in range(len(df1_windows)):
+        for j in range(len(df2_windows)):
+            df_out_list.append(
+                __compare_two_windows(df1_windows[i][0], df1_windows[i][1], df2_windows[j][0], df2_windows[j][1],
+                                      df1_column.index, df2_column.index, cutoff))
+    output = pd.concat(df_out_list)
+    output = output.groupby(output.index).max()
     return output
