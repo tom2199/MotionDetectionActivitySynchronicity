@@ -3,6 +3,8 @@ import os
 import plotly.graph_objects as go
 import plotly
 from scipy import signal, stats, fftpack
+import numpy as np
+
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import pandas as pd
@@ -46,12 +48,16 @@ def import_folder(mac_address_list, folder):
 def trace_dataframe_list(dataframe_list, sensor_names, show_legend=True):
     colors = plotly.colors.DEFAULT_PLOTLY_COLORS
     output = []
-    for dataframe in dataframe_list:
+    for df_index, dataframe in enumerate(dataframe_list):
         y_axis = dataframe[sensor_names]
         x_axis = dataframe.index
         for index, s in enumerate(sensor_names):
-            output.append(go.Scattergl(x=x_axis, y=y_axis[s], name=s, legendgroup=s, showlegend=show_legend,
-                                       line=dict(color=colors[index])))
+            if df_index == 0:
+                output.append(go.Scattergl(x=x_axis, y=y_axis[s], name=s, legendgroup=s, showlegend=show_legend,
+                                           line=dict(color=colors[index])))
+            else:
+                output.append(go.Scattergl(x=x_axis, y=y_axis[s], name=s, legendgroup=s, showlegend=False,
+                                           line=dict(color=colors[index])))
     return output
 
 
