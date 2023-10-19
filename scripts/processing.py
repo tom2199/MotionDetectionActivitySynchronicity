@@ -46,13 +46,13 @@ def import_folder(mac_address_list, folder):
 
 # put all dataframes of a list into a list of traces for plotly
 def trace_dataframe_list(dataframe_list, sensor_names, show_legend=True):
-    colors = plotly.colors.DEFAULT_PLOTLY_COLORS
+    colors = plotly.colors.DEFAULT_PLOTLY_COLORS + plotly.colors.DEFAULT_PLOTLY_COLORS # repeat colors to have enough
     output = []
     for df_index, dataframe in enumerate(dataframe_list):
         y_axis = dataframe[sensor_names]
         x_axis = dataframe.index
         for index, s in enumerate(sensor_names):
-            if df_index == 0:
+            if df_index == 0: # only show legend for first dataframe
                 output.append(go.Scattergl(x=x_axis, y=y_axis[s], name=s, legendgroup=s, showlegend=show_legend,
                                            line=dict(color=colors[index])))
             else:
