@@ -2,8 +2,10 @@ from scripts.preprocessing import *
 import os
 import plotly.graph_objects as go
 import plotly
-import pandas as pd
 from scipy import signal, stats, fftpack
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+import pandas as pd
 
 
 # use preprocessing.py to import data
@@ -245,7 +247,7 @@ def calc_windows(df_column):
 
 
 # calculate the overlap between two windows
-def __compare_two_windows(window1_start, window1_end, window2_start, window2_end, index1, index2, cutoff=0.8):
+def __compare_two_windows(window1_start, window1_end, window2_start, window2_end, index1, index2, overlap=0.8):
     window1 = pd.DataFrame(index=index1)
     window2 = pd.DataFrame(index=index2)
     output = pd.DataFrame(index=index1 & index2)
@@ -260,7 +262,7 @@ def __compare_two_windows(window1_start, window1_end, window2_start, window2_end
     output = window1 + window2
     count_output = (output == 1).values.sum()
 
-    if count_output / count < cutoff:
+    if count_output / count < overlap:
         output[""] = 0
     return output[""]
 
