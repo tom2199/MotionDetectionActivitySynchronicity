@@ -46,13 +46,14 @@ def import_folder(mac_address_list, folder):
 
 # put all dataframes of a list into a list of traces for plotly
 def trace_dataframe_list(dataframe_list, sensor_names, show_legend=True):
-    colors = plotly.colors.DEFAULT_PLOTLY_COLORS + plotly.colors.DEFAULT_PLOTLY_COLORS # repeat colors to have enough
+    colors = plotly.colors.DEFAULT_PLOTLY_COLORS
+    colors = colors + colors + colors  # repeat colors to have enough
     output = []
     for df_index, dataframe in enumerate(dataframe_list):
         y_axis = dataframe[sensor_names]
         x_axis = dataframe.index
         for index, s in enumerate(sensor_names):
-            if df_index == 0: # only show legend for first dataframe
+            if df_index == 0:  # only show legend for first dataframe
                 output.append(go.Scattergl(x=x_axis, y=y_axis[s], name=s, legendgroup=s, showlegend=show_legend,
                                            line=dict(color=colors[index])))
             else:
@@ -89,7 +90,8 @@ def calc_rolling_attributes(dataframe, attributes=None, timeframe="10s", iqr=Non
         iqr = [0.25, 0.75]
     if attributes is None:
         attributes = ["min", "max", "mean", "std", "quant0.1", "quant0.3", "quant0.5", "quant0.7",
-                      "quant0.9", "fft_freq", "diff", "iqr0.1", "iqr0.2", "iqr0.4", "iqr0.6", "iqr0.8", "iqr0.9"]
+                      "quant0.9", "fft_freq", "diff", "iqr0.1", "iqr0.2", "iqr0.3", "iqr0.4", "iqr0.5", "iqr0.6",
+                      "iqr0.7", "iqr0.8", "iqr0.9"]
     if "quant_all" in attributes:
         attributes.remove("quant_all")
         attributes.append("quant0.1")
@@ -101,8 +103,11 @@ def calc_rolling_attributes(dataframe, attributes=None, timeframe="10s", iqr=Non
         attributes.remove("iqr_all")
         attributes.append("iqr0.1")
         attributes.append("iqr0.2")
+        attributes.append("iqr0.3")
         attributes.append("iqr0.4")
+        attributes.append("iqr0.5")
         attributes.append("iqr0.6")
+        attributes.append("iqr0.7")
         attributes.append("iqr0.8")
         attributes.append("iqr0.9")
     output = pd.DataFrame()
@@ -141,15 +146,20 @@ def calc_rolling_attributes(dataframe, attributes=None, timeframe="10s", iqr=Non
 
     if "iqr" in attributes:
         output["iqr"] = calc_iqr(dataframe, iqr[0], iqr[1], timeframe=timeframe)
-
     if "iqr0.1" in attributes:
         output["iqr0.1"] = calc_iqr(dataframe, 0.45, 0.55, timeframe=timeframe)
     if "iqr0.2" in attributes:
         output["iqr0.2"] = calc_iqr(dataframe, 0.4, 0.6, timeframe=timeframe)
+    if "iqr0.3" in attributes:
+        output["iqr0.3"] = calc_iqr(dataframe, 0.35, 0.65, timeframe=timeframe)
     if "iqr0.4" in attributes:
         output["iqr0.4"] = calc_iqr(dataframe, 0.3, 0.7, timeframe=timeframe)
+    if "iqr0.5" in attributes:
+        output["iqr0.5"] = calc_iqr(dataframe, 0.25, 0.75, timeframe=timeframe)
     if "iqr0.6" in attributes:
         output["iqr0.6"] = calc_iqr(dataframe, 0.2, 0.8, timeframe=timeframe)
+    if "iqr0.7" in attributes:
+        output["iqr0.7"] = calc_iqr(dataframe, 0.15, 0.85, timeframe=timeframe)
     if "iqr0.8" in attributes:
         output["iqr0.8"] = calc_iqr(dataframe, 0.1, 0.9, timeframe=timeframe)
     if "iqr0.9" in attributes:
@@ -204,16 +214,15 @@ def calc_activity(df_diff_column, diff_threshold=1, rolling_threshold=4):
 
 
 # calculate score based on quantile start and stop threshold
-def calc_score(df_iqr_column, start_threshold=0.95, stop_threshold=0.75, resample=None, timeframe=None):
-    output = pd.DataFrame(index=df_iqr_column.index)
+def calc_score(df_column, start_threshold=0.95, stop_threshold=0.75, resample=None, timeframe=None):
+    output = pd.DataFrame(index=df_column.index)
     activity_started = False
     score = []
-    for row in df_iqr_column:
-        iqr = row
-        if iqr > start_threshold:
+    for value in df_column:
+        if value > start_threshold:
             if not activity_started:
                 activity_started = True
-        elif iqr < stop_threshold:
+        elif value < stop_threshold:
             if activity_started:
                 activity_started = False
 
@@ -274,7 +283,7 @@ def __compare_two_windows(window1_start, window1_end, window2_start, window2_end
 
 
 # calculate the overlap between two dataframes (result is a mask for the data where the overlap is above the cutoff)
-def calc_windows_between_two_dataframes(df1_column, df2_column, cutoff=0.8):
+def calc_windows_between_two_dataframes(df1_column, df2_column, overlap=0.8):
     df1_windows = calc_windows(df1_column)
     df2_windows = calc_windows(df2_column)
 
@@ -284,7 +293,7 @@ def calc_windows_between_two_dataframes(df1_column, df2_column, cutoff=0.8):
         for j in range(len(df2_windows)):
             df_out_list.append(
                 __compare_two_windows(df1_windows[i][0], df1_windows[i][1], df2_windows[j][0], df2_windows[j][1],
-                                      df1_column.index, df2_column.index, cutoff))
+                                      df1_column.index, df2_column.index, overlap))
     output = pd.concat(df_out_list)
     output = output.groupby(output.index).max()
     return output
