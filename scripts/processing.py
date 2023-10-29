@@ -6,6 +6,7 @@ from scipy import signal, stats, fftpack
 import numpy as np
 
 import warnings
+
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import pandas as pd
 
@@ -89,15 +90,19 @@ def calc_rolling_attributes(dataframe, attributes=None, timeframe="10s", iqr=Non
     if iqr is None:
         iqr = [0.25, 0.75]
     if attributes is None:
-        attributes = ["min", "max", "mean", "std", "quant0.1", "quant0.3", "quant0.5", "quant0.7",
-                      "quant0.9", "fft_freq", "diff", "iqr0.1", "iqr0.2", "iqr0.3", "iqr0.4", "iqr0.5", "iqr0.6",
-                      "iqr0.7", "iqr0.8", "iqr0.9"]
+        attributes = ["min", "max", "mean", "std", "quant0.1", "quant0.2", "quant0.3", "quant0.4", "quant0.5",
+                      "quant0.6", "quant0.7", "quant0.8", "quant0.9", "fft_freq", "diff", "iqr0.1", "iqr0.2", "iqr0.3",
+                      "iqr0.4", "iqr0.5", "iqr0.6", "iqr0.7", "iqr0.8", "iqr0.9"]
     if "quant_all" in attributes:
         attributes.remove("quant_all")
         attributes.append("quant0.1")
+        attributes.append("quant0.2")
         attributes.append("quant0.3")
+        attributes.append("quant0.4")
         attributes.append("quant0.5")
+        attributes.append("quant0.6")
         attributes.append("quant0.7")
+        attributes.append("quant0.8")
         attributes.append("quant0.9")
     if "iqr_all" in attributes:
         attributes.remove("iqr_all")
@@ -122,12 +127,20 @@ def calc_rolling_attributes(dataframe, attributes=None, timeframe="10s", iqr=Non
         output["std"] = dataframe.rolling(timeframe).std().resample(timeframe).first()
     if "quant0.1" in attributes:
         output["quant0.1"] = dataframe.rolling(timeframe).quantile(0.1).resample(timeframe).first()
+    if "quant0.2" in attributes:
+        output["quant0.2"] = dataframe.rolling(timeframe).quantile(0.2).resample(timeframe).first()
     if "quant0.3" in attributes:
         output["quant0.3"] = dataframe.rolling(timeframe).quantile(0.3).resample(timeframe).first()
+    if "quant0.4" in attributes:
+        output["quant0.4"] = dataframe.rolling(timeframe).quantile(0.4).resample(timeframe).first()
     if "quant0.5" in attributes:
         output["quant0.5"] = dataframe.rolling(timeframe).quantile(0.5).resample(timeframe).first()
+    if "quant0.6" in attributes:
+        output["quant0.6"] = dataframe.rolling(timeframe).quantile(0.6).resample(timeframe).first()
     if "quant0.7" in attributes:
         output["quant0.7"] = dataframe.rolling(timeframe).quantile(0.7).resample(timeframe).first()
+    if "quant0.8" in attributes:
+        output["quant0.8"] = dataframe.rolling(timeframe).quantile(0.8).resample(timeframe).first()
     if "quant0.9" in attributes:
         output["quant0.9"] = dataframe.rolling(timeframe).quantile(0.9).resample(timeframe).first()
 
